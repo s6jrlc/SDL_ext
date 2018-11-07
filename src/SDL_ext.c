@@ -19,9 +19,11 @@
 #define SDL_EDA_KEY_FUNC_ACTIVE_MOTION "active-motion function"
 #define SDL_EDA_KEY_FUNC_PASSIVE_MOTION "passive-motion function"
 #define SDL_EDA_KEY_FUNC_DROP "drop function"
+#define SDL_EDA_KEY_FUNC_CLOSE "close function"
 #define SDL_EDA_KEY_FUNC_DISPLAY "display function"
 
 /* type definition of functions */
+typedef Uint8 (*SDL_EdaFuncEventRequested)(void);
 typedef void (*SDL_EdaFuncAtTimes)(void);
 typedef void (*SDL_EdaFuncDisplay)(void);
 typedef void (*SDL_EdaFuncJoyCxn)(Sint32);
@@ -53,8 +55,9 @@ static Uint32 n_windows_ = 0;
 
 static Uint8 system_active_ = SDL_TRUE;
 
-static SDL_EdaFuncAtTimes func_idle_ = NULL;
+static SDL_EdaFuncEventRequested func_quit_ = NULL;
 static SDL_EdaFuncAtTimes func_at_exit_ = NULL;
+static SDL_EdaFuncAtTimes func_idle_ = NULL;
 static SDL_EdaFuncJoyCxn func_joy_added_ = NULL;
 static SDL_EdaFuncJoyCxn func_joy_removed_ = NULL;
 static SDL_EdaFuncJoyAxis func_joy_axis_ = NULL;
@@ -162,6 +165,48 @@ void SDL_EDA_UpdateWindow(void)
 	}
 }
 
+void SDL_EDA_WindowPosition(int x, int y)
+{
+	x_ = x; y_ = y;
+}
+void SDL_EDA_WindowSize(int w, int h)
+{
+	w_ = w; h_ = h;
+}
+void SDL_EDA_WindowState(Uint32 flag)
+{
+	window_flag_ = flag;
+}
+
+Uint32 SDL_EDA_CreateWindow(const char* title)
+{
+	SDL_Window* new_window = SDL_CreateWindow(title, x_, y_, w_, h_, window_flag_);
+	if (window_flag_ & SDL_WINDOW_OPENGL)
+	{
+		SDL_GLContext ctx = SDL_GL_CreateContext(new_window);
+		SDL_SetWindowData(new_window, SDL_EDA_KEY_GLCONTEXT, ctx);
+		SDL_GL_MakeCurrent(new_window, ctx);
+	}
+	else if (!(window_flag_ & SDL_WINDOW_VULKAN))
+	{
+		SDL_CreateRenderer(new_window, -1, SDL_RENDERER_PRESENTVSYNC);
+	}
+	
+	if (window_head_) // push front
+	{
+		SDL_Window* w = window_head_;
+		SDL_SetWindowData(w, SDL_EDA_KEY_PREV, new_window);
+		SDL_SetWindowData(new_window, SDL_EDA_KEY_NEXT, w);
+		window_head_ = new_window;
+	}
+	else
+	{
+		window_head_ = new_window;
+	}
+	
+	return ++n_windows_;
+}
+
 static SDL_INLINE void SDL_edaDestroyWindow(SDL_Window* window) // change non-static function?
 {
 	if (window)
@@ -205,11 +250,16 @@ static SDL_INLINE void SDL_edaDestroyWindow(SDL_Window* window) // change non-st
 		}
 		
 		SDL_DestroyWindow(window);
-		window = NULL;
 		--n_windows_;
 	}
 }
 
+SDL_FORCE_INLINE Uint8 SDL_edaCallWCFunc(SDL_WindowEvent* ev_window, const char* str)
+{
+	SDL_EdaFuncEventRequested f = SDL_GetWindowData(SDL_GetWindowFromID(ev_window->windowID), str);
+	if (f) return f();
+	return SDL_TRUE;
+}
 SDL_FORCE_INLINE void SDL_edaCallWFunc(SDL_WindowEvent* ev_window, const char* str)
 {
 	SDL_EdaFuncWindow f = SDL_GetWindowData(SDL_GetWindowFromID(ev_window->windowID), str);
@@ -226,7 +276,19 @@ static SDL_INLINE void SDL_edaProcessWindowsEvents(SDL_WindowEvent* ev_window)
 	switch (ev_window->event)
 	{
 		case SDL_WINDOWEVENT_CLOSE:
-			SDL_edaDestroyWindow(SDL_GetWindowFromID(ev_window->windowID));
+			if (SDL_edaCallWCFunc(ev_window, SDL_EDA_KEY_FUNC_CLOSE))
+			{
+				if (n_windows_ > 1)
+				{
+					SDL_edaDestroyWindow(SDL_GetWindowFromID(ev_window->windowID));
+				}
+				else if (!func_quit_ || func_quit_())
+				{
+					SDL_edaDestroyWindow(SDL_GetWindowFromID(ev_window->windowID));
+					SDL_FlushEvent(SDL_QUIT);
+					system_active_ = SDL_FALSE;
+				}
+			}
 			break;
 		case SDL_WINDOWEVENT_MOVED:
 			SDL_edaCallWDFunc(ev_window, SDL_EDA_KEY_FUNC_MOVED);
@@ -249,7 +311,7 @@ static SDL_INLINE void SDL_edaProcessWindowsEvents(SDL_WindowEvent* ev_window)
 	}
 }
 
-SDL_FORCE_INLINE void SDL_edaCallDropFunc(SDL_DropEvent* ev_drop)
+SDL_FORCE_INLINE void SDL_edaCallDropFunc(const SDL_DropEvent* ev_drop)
 {
 	char* str = ev_drop->file;
 	SDL_Window* w = SDL_GetWindowFromID(ev_drop->windowID);
@@ -261,24 +323,24 @@ SDL_FORCE_INLINE void SDL_edaCallDropFunc(SDL_DropEvent* ev_drop)
 	SDL_free(str);
 }
 
-SDL_FORCE_INLINE void SDL_edaCallJoyCxnFunc(SDL_JoyDeviceEvent* ev_jdev)
+SDL_FORCE_INLINE void SDL_edaCallJoyCxnFunc(const SDL_JoyDeviceEvent* ev_jdev)
 {
 	SDL_Joystick* joystick = SDL_JoystickOpen(ev_jdev->which);
 	if (func_joy_added_) func_joy_added_(SDL_JoystickInstanceID(joystick));
 }
-SDL_FORCE_INLINE void SDL_edaCallJoyDiscxnFunc(SDL_JoyDeviceEvent* ev_jdev)
+SDL_FORCE_INLINE void SDL_edaCallJoyDiscxnFunc(const SDL_JoyDeviceEvent* ev_jdev)
 {
 	if (func_joy_removed_) func_joy_removed_(ev_jdev->which);
 	SDL_JoystickClose(SDL_JoystickFromInstanceID(ev_jdev->which));
 }
 
-SDL_FORCE_INLINE void SDL_edaCallMBFunc(SDL_Event* ev)
+SDL_FORCE_INLINE void SDL_edaCallMBFunc(const SDL_Event* ev)
 {
 	SDL_Window* w = SDL_GetWindowFromID(ev->window.windowID);
 	SDL_EdaFuncMouseButton f = SDL_GetWindowData(w, SDL_EDA_KEY_FUNC_MOUSE_BUTTON);
 	if (f) f(ev->button.button, ev->button.state, ev->button.x, ev->button.y);
 }
-SDL_FORCE_INLINE void SDL_edaCallMMFunc(SDL_Event* ev)
+SDL_FORCE_INLINE void SDL_edaCallMMFunc(const SDL_Event* ev)
 {
 	SDL_Window* w = SDL_GetWindowFromID(ev->window.windowID);
 	SDL_EdaFuncMouseMotion af = SDL_GetWindowData(w, SDL_EDA_KEY_FUNC_ACTIVE_MOTION);
@@ -300,7 +362,18 @@ static SDL_INLINE void SDL_edaProcessEvents(SDL_Event* ev)
 		switch (ev->type)
 		{
 			case SDL_QUIT:
-				SDL_EDA_ExitLoop();
+				if (n_windows_ > 0 && (!func_quit_ || func_quit_()))
+				{
+					SDL_Window* w;
+					SDL_Window* w_next;
+					for (w = window_head_; w; w = w_next)
+					{
+						SDL_EdaFuncEventRequested f = SDL_GetWindowData(w, SDL_EDA_KEY_FUNC_CLOSE);
+						w_next = SDL_GetWindowData(w, SDL_EDA_KEY_NEXT);
+						if (!f || f()) SDL_edaDestroyWindow(w);
+					}
+				}
+				if (n_windows_ == 0) system_active_ = SDL_FALSE;
 				break;
 			case SDL_KEYDOWN:
 				if (func_keydown_) func_keydown_(ev->key.keysym.sym);
@@ -330,16 +403,16 @@ static SDL_INLINE void SDL_edaProcessEvents(SDL_Event* ev)
 			case SDL_DROPTEXT:
 				SDL_edaCallDropFunc(&ev->drop);
 				break;
-      case SDL_WINDOWEVENT:
-        SDL_edaProcessWindowsEvents(&ev->window);
-        break;
-      case SDL_MOUSEBUTTONDOWN:
-      case SDL_MOUSEBUTTONUP:
-        SDL_edaCallMBFunc(ev);
-        break;
-      case SDL_MOUSEMOTION:
-        SDL_edaCallMMFunc(ev);
-        break;
+			case SDL_WINDOWEVENT:
+				SDL_edaProcessWindowsEvents(&ev->window);
+				break;
+			case SDL_MOUSEBUTTONDOWN:
+			case SDL_MOUSEBUTTONUP:
+				SDL_edaCallMBFunc(ev);
+				break;
+			case SDL_MOUSEMOTION:
+				SDL_edaCallMMFunc(ev);
+				break;
 			default:
 				break;
 		}
@@ -391,10 +464,9 @@ static SDL_INLINE void SDL_edaDisplay(void)
 static SDL_INLINE void SDL_edaQuit(void)
 {
 	int i;
-	SDL_Window* w;
-	for (w = window_head_; w; w = (SDL_Window*)SDL_GetWindowData(w, SDL_EDA_KEY_NEXT))
+	while (window_head_ != NULL)
 	{
-		SDL_edaDestroyWindow(w);
+		SDL_edaDestroyWindow(window_head_);
 	}
 	
 	for (i=0; i<SDL_NumJoysticks(); ++i)
@@ -428,7 +500,7 @@ void SDL_EDA_EnterLoop(void)
 	{
 		SDL_edaProcessEvents(&ev);
 		SDL_edaDisplay();
-
+		
 		frame_ticks = wait_ticks_ - (SDL_edaGetTicks() - now_ticks);
 		if ((Sint32)frame_ticks > 0) SDL_Delay(frame_ticks / coef_ticks_);
 		actual_framerate_ = coef_count_ / (SDL_edaGetTicks() - now_ticks);
@@ -438,13 +510,17 @@ void SDL_EDA_EnterLoop(void)
 	SDL_edaQuit();
 }
 
-void SDL_EDA_IdleFunc(SDL_EdaFuncAtTimes f)
+void SDL_EDA_QuitRequestedFunc(SDL_EdaFuncEventRequested f)
 {
-	func_idle_ = f;
+	func_quit_ = f;
 }
 void SDL_EDA_ExitFunc(SDL_EdaFuncAtTimes f)
 {
 	func_at_exit_ = f;
+}
+void SDL_EDA_IdleFunc(SDL_EdaFuncAtTimes f)
+{
+	func_idle_ = f;
 }
 void SDL_EDA_KeyDownFunc(SDL_EdaFuncKeyboard f)
 {
@@ -518,45 +594,7 @@ void SDL_EDA_DropFunc(SDL_EdaFuncDrop f)
 {
 	SDL_SetWindowData(window_head_, SDL_EDA_KEY_FUNC_DROP, f);
 }
-
-Uint32 SDL_EDA_CreateWindow(const char* title)
+void SDL_EDA_CloseFunc(SDL_EdaFuncEventRequested f)
 {
-	SDL_Window* new_window = SDL_CreateWindow(title, x_, y_, w_, h_, window_flag_);
-	if (window_flag_ & SDL_WINDOW_OPENGL)
-	{
-		SDL_GLContext ctx = SDL_GL_CreateContext(new_window);
-		SDL_SetWindowData(new_window, SDL_EDA_KEY_GLCONTEXT, ctx);
-		SDL_GL_MakeCurrent(new_window, ctx);
-	}
-	else if (!(window_flag_ & SDL_WINDOW_VULKAN))
-	{
-		SDL_CreateRenderer(new_window, -1, SDL_RENDERER_PRESENTVSYNC);
-	}
-	
-	if (window_head_) // push front
-	{
-		SDL_Window* w = window_head_;
-		SDL_SetWindowData(w, SDL_EDA_KEY_PREV, new_window);
-		SDL_SetWindowData(new_window, SDL_EDA_KEY_NEXT, w);
-		window_head_ = new_window;
-	}
-	else
-	{
-		window_head_ = new_window;
-	}
-	
-	return ++n_windows_;
-}
-
-void SDL_EDA_WindowPosition(int x, int y)
-{
-	x_ = x; y_ = y;
-}
-void SDL_EDA_WindowSize(int w, int h)
-{
-	w_ = w; h_ = h;
-}
-void SDL_EDA_WindowState(Uint32 flag)
-{
-	window_flag_ = flag;
+	SDL_SetWindowData(window_head_, SDL_EDA_KEY_FUNC_CLOSE, f);
 }

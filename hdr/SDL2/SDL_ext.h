@@ -14,11 +14,6 @@ extern "C"
 
 typedef enum
 {
-	SDL_EDA_WINDOW_DEFAULT = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE,
-  SDL_EDA_WINDOW_BORDERLESS = SDL_EDA_WINDOW_DEFAULT | SDL_WINDOW_BORDERLESS,
-  SDL_EDA_WINDOW_OPENGL = SDL_EDA_WINDOW_DEFAULT | SDL_WINDOW_OPENGL,
-  SDL_EDA_WINDOW_VULKAN = SDL_EDA_WINDOW_DEFAULT | SDL_WINDOW_VULKAN,
-
 	SDL_EXT_WINDOW_DEFAULT = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE,
 	SDL_EXT_WINDOW_HIGHDPI = SDL_EXT_WINDOW_DEFAULT | SDL_WINDOW_ALLOW_HIGHDPI,
 	SDL_EXT_WINDOW_BORDERLESS = SDL_EXT_WINDOW_DEFAULT | SDL_WINDOW_BORDERLESS,
@@ -97,28 +92,35 @@ extern DECLSPEC void SDLCALL SDL_EDA_UpdateWindow(void);
 
 
 /**
- This function sets function operated when process is idle
+ This function sets a function executed when requested quit event, returning 1 to quit application
 
+ @param func quit-requested function
+ */
+extern DECLSPEC void SDLCALL SDL_EDA_QuitRequestedFunc(Uint8 (*func)(void));
+
+/**
+ This function sets function executed when exit
+
+ @param func at-exit a function
+ */
+extern DECLSPEC void SDLCALL SDL_EDA_ExitFunc(void (*func)(void));
+
+/**
+ This function sets a function executed when process is idle
+ 
  @param func idle function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_IdleFunc(void (*func)(void));
 
 /**
- This function sets function operated when exit
-
- @param func at-exit function
- */
-extern DECLSPEC void SDLCALL SDL_EDA_ExitFunc(void (*func)(void));
-
-/**
- This function sets function operated when key is pressed
+ This function sets a function executed when key is pressed
 
  @param func key-up function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_KeyDownFunc(void (*func)(Sint32));
 
 /**
- This function sets function operated when key is released
+ This function sets a function executed when key is released
 
  @param func key-down function
  */
@@ -126,28 +128,28 @@ extern DECLSPEC void SDLCALL SDL_EDA_KeyUpFunc(void (*func)(Sint32));
 
 
 /**
- This function sets function operated when joystick is connected
+ This function sets a function executed when joystick is connected
 
  @param func function for joystick connection
  */
 extern DECLSPEC void SDLCALL SDL_EDA_JoyAddedFunc(void (*func)(Sint32));
 
 /**
- This function sets function operated when joystick is disconnected
+ This function sets a function executed when joystick is disconnected
 	 
  @param func function for joystick disconnection
  */
 extern DECLSPEC void SDLCALL SDL_EDA_JoyRemovedFunc(void (*func)(Sint32));
 
 /**
- This function sets function operated when joystick-axis-state is changed
+ This function sets a function executed when joystick-axis-state is changed
  
  @param func joystick-axis function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_JoyAxisFunc(void (*func)(Sint32, Uint8, Sint16));
 
 /**
- This function sets function operated when joystick-button is pressed
+ This function sets a function executed when joystick-button is pressed
 
  @param func joystick-button-down function
 
@@ -155,14 +157,14 @@ extern DECLSPEC void SDLCALL SDL_EDA_JoyAxisFunc(void (*func)(Sint32, Uint8, Sin
 extern DECLSPEC void SDLCALL SDL_EDA_JoyButtonDownFunc(void (*func)(Sint32, Uint8));
 
 /**
- This function sets function operated when joystick-button is released
+ This function sets a function executed when joystick-button is released
 
  @param func joystick-button-up function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_JoyButtonUpFunc(void (*func)(Sint32, Uint8));
 
 /**
- This function sets function operated when joystick-hat is changed
+ This function sets a function executed when joystick-hat is changed
 
  @param func joystick-hat function
  */
@@ -170,63 +172,63 @@ extern DECLSPEC void SDLCALL SDL_EDA_JoyHatFunc(void (*func)(Sint32, Uint8, Uint
 	
 	
 /**
- This function sets function operated when mouse button state changes
+ This function sets a function executed when mouse button state changes
 
  @param func mouse button function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_MouseButtonFunc(void (*func)(Uint8, Uint8, Sint32, Sint32));
 
 /**
- This function sets function operated when active mouse cursor moves
+ This function sets a function executed when active mouse cursor moves
 
  @param func active mouse motion function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_MouseActiveMotionFunc(void (*func)(Sint32, Sint32));
 
 /**
- This function sets function operated when passive mouse cursor moves
+ This function sets a function executed when passive mouse cursor moves
 
  @param func passive mouse motion function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_MousePassiveMotionFunc(void (*func)(Sint32, Sint32));
 
 /**
- This function sets displaying function
+ This function sets a displaying function
 
  @param func displaying function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_DisplayFunc(void (*func)(void));
 
 /**
- This function sets function operated when window size is changed
+ This function sets a function executed when window size is changed
 
  @param func window-size-changed function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_SizeChangedFunc(void (*func)(Sint32, Sint32));
 
 /**
- This function sets function operated when window is resized
+ This function sets a function executed when window is resized
 
  @param func window-resized function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_ResizeFunc(void (*func)(Sint32, Sint32));
 
 /**
- This function sets function operated when window is moved
+ This function sets a function executed when window is moved
 
  @param func window-moved function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_MovedFunc(void (*func)(Sint32, Sint32));
 
 /**
- This function sets function operated when mouse cursor strides across window border
+ This function sets a function executed when mouse cursor strides across window border
  
  @param func mouse-cursor function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_CursorEnterFunc(void (*func)(void));
 
 /**
- This function sets function operated when mouse cursor strides across window border
+ This function setsa  function executed when mouse cursor strides across window border
  
  @param func mouse-cursor function
  */
@@ -234,11 +236,18 @@ extern DECLSPEC void SDLCALL SDL_EDA_CursorEnterFunc(void (*func)(void));
 extern DECLSPEC void SDLCALL SDL_EDA_CursorLeaveFunc(void (*func)(void));
 
 /**
- This function sets function operated when some drops into window
+ This function sets a function executed when some drops into window
 
  @param func drop function
  */
 extern DECLSPEC void SDLCALL SDL_EDA_DropFunc(void (*func)(char*));
+
+/**
+ This function sets a function executed when window is closed, returning 1 to close window
+
+ @param func window close function
+ */
+extern DECLSPEC void SDLCALL SDL_EDA_CloseFunc(Uint8 (*func)(void));
 
 
 /**
