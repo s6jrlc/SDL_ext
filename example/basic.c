@@ -90,6 +90,38 @@ static void cursor() {
   printf("%s\n", __FUNCTION__);
 }
 
+static Uint8 closeRequested(void)
+{
+  const SDL_MessageBoxButtonData buttons[] = {
+    { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "Close" },
+    {                                     0, 1, "Cancel" },
+  };
+  const SDL_MessageBoxColorScheme colorScheme = {
+    {
+      { 255,   0,   0 },
+      {   0, 255,   0 },
+      { 255, 255,   0 },
+      {   0,   0, 255 },
+      { 255,   0, 255 },
+    }
+  };
+  const SDL_MessageBoxData messageboxdata = {
+    SDL_MESSAGEBOX_INFORMATION,
+    NULL,
+    "Close window",
+    "Select button",
+    SDL_arraysize(buttons),
+    buttons,
+    &colorScheme
+  };
+  int buttonid = -1;
+  if (SDL_ShowMessageBox(&messageboxdata, &buttonid) < 0) {
+    SDL_Log("error to show message box");
+  }
+	if (buttonid == 0) return SDL_TRUE;
+  return SDL_FALSE;
+}
+
 static void atExit(void) {
   printf("%s\n", __FUNCTION__);
 }
@@ -122,8 +154,16 @@ int main(int ac, char* av[]) {
   SDL_EDA_ResizeFunc(resize);
   SDL_EDA_CursorEnterFunc(cursor);
   SDL_EDA_CursorLeaveFunc(cursor);
+	SDL_EDA_CloseFunc(closeRequested);
   SDL_EDA_ExitFunc(atExit);
 
+	SDL_EDA_WindowSize(120, 120);
+	SDL_EDA_WindowPosition(0, 0);
+	SDL_EDA_CreateWindow(u8"SDL EDA システム");
+	SDL_EDA_CloseFunc(closeRequested);
+	SDL_EDA_WindowPosition(120, 0);
+	SDL_EDA_CreateWindow("system");
+	SDL_EDA_CloseFunc(closeRequested);
   init();
   SDL_EDA_EnterLoop();
   

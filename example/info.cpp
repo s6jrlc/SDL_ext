@@ -44,6 +44,37 @@ namespace {
       dst.y += dst.h;
     }
   }
+	Uint8 quitRequested()
+	{
+		const SDL_MessageBoxButtonData buttons[] = {
+			{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "Close" },
+			{                                     0, 1, "Cancel" },
+		};
+		const SDL_MessageBoxColorScheme colorScheme = {
+			{
+				{ 255,   0,   0 },
+				{   0, 255,   0 },
+				{ 255, 255,   0 },
+				{   0,   0, 255 },
+				{ 255,   0, 255 },
+			}
+		};
+		const SDL_MessageBoxData messageboxdata = {
+			SDL_MESSAGEBOX_INFORMATION,
+			NULL,
+			"Quit Application?",
+			"Select button",
+			SDL_arraysize(buttons),
+			buttons,
+			&colorScheme
+		};
+		int buttonid = -1;
+		if (SDL_ShowMessageBox(&messageboxdata, &buttonid) < 0) {
+			SDL_Log("error to show message box");
+		}
+		if (buttonid == 0) return SDL_TRUE;
+		return SDL_FALSE;
+	}
   void atExit() {
     TTF_CloseFont(font);
     SDL_free(path);
@@ -84,6 +115,7 @@ int main(int ac, char* av[]) {
   
   SDL_EDA_IdleFunc(idle);
   SDL_EDA_DisplayFunc(rendering);
+	SDL_EDA_QuitRequestedFunc(quitRequested);
   SDL_EDA_ExitFunc(atExit);
   
   init();

@@ -148,10 +148,10 @@ Uint32 SDL_EDA_GetFrameRate(void)
 void SDL_EDA_UpdateWindow(void)
 {
 	SDL_Window* w;
-	for (w = window_head_; w; w = (SDL_Window*)SDL_GetWindowData(w, SDL_EDA_KEY_NEXT))
+	for (w = window_head_; w; w = SDL_GetWindowData(w, SDL_EDA_KEY_NEXT))
 	{
 		SDL_Renderer* renderer = SDL_GetRenderer(w);
-		SDL_GLContext ctx = (SDL_GLContext)SDL_GetWindowData(w, SDL_EDA_KEY_GLCONTEXT);
+		SDL_GLContext ctx = SDL_GetWindowData(w, SDL_EDA_KEY_GLCONTEXT);
 		
 		if (renderer)
 		{
@@ -212,7 +212,7 @@ static SDL_INLINE void SDL_edaDestroyWindow(SDL_Window* window) // change non-st
 	if (window)
 	{
 		SDL_Renderer* renderer = SDL_GetRenderer(window);
-		SDL_GLContext ctx = (SDL_GLContext)SDL_GetWindowData(window, SDL_EDA_KEY_GLCONTEXT);
+		SDL_GLContext ctx = SDL_GetWindowData(window, SDL_EDA_KEY_GLCONTEXT);
 		
 		if (renderer)
 		{
@@ -227,7 +227,7 @@ static SDL_INLINE void SDL_edaDestroyWindow(SDL_Window* window) // change non-st
 		
 		if (window == window_head_) // arg is head window
 		{
-			window_head_ = (SDL_Window*)SDL_GetWindowData(window_head_, SDL_EDA_KEY_NEXT);
+			window_head_ = SDL_GetWindowData(window_head_, SDL_EDA_KEY_NEXT);
 			if (window_head_)
 			{
 				SDL_SetWindowData(window_head_, SDL_EDA_KEY_PREV, NULL);
@@ -235,7 +235,7 @@ static SDL_INLINE void SDL_edaDestroyWindow(SDL_Window* window) // change non-st
 		}
 		else if (!SDL_GetWindowData(window, SDL_EDA_KEY_NEXT)) // arg is tail window
 		{
-			SDL_Window* w = (SDL_Window*)SDL_GetWindowData(window, SDL_EDA_KEY_PREV);
+			SDL_Window* w = SDL_GetWindowData(window, SDL_EDA_KEY_PREV);
 			if (w)
 			{
 				SDL_SetWindowData(w, SDL_EDA_KEY_NEXT, NULL);
@@ -243,8 +243,8 @@ static SDL_INLINE void SDL_edaDestroyWindow(SDL_Window* window) // change non-st
 		}
 		else
 		{
-			SDL_Window* w_prev = (SDL_Window*)SDL_GetWindowData(window, SDL_EDA_KEY_PREV);
-			SDL_Window* w_next = (SDL_Window*)SDL_GetWindowData(window, SDL_EDA_KEY_NEXT);
+			SDL_Window* w_prev = SDL_GetWindowData(window, SDL_EDA_KEY_PREV);
+			SDL_Window* w_next = SDL_GetWindowData(window, SDL_EDA_KEY_NEXT);
 			SDL_SetWindowData(w_prev, SDL_EDA_KEY_NEXT, w_next);
 			SDL_SetWindowData(w_next, SDL_EDA_KEY_PREV, w_prev);
 		}
@@ -317,7 +317,7 @@ SDL_FORCE_INLINE void SDL_edaCallDropFunc(const SDL_DropEvent* ev_drop)
 	SDL_Window* w = SDL_GetWindowFromID(ev_drop->windowID);
 	if (w)
 	{
-		SDL_EdaFuncDrop f = (SDL_EdaFuncDrop)SDL_GetWindowData(w, SDL_EDA_KEY_FUNC_DROP);
+		SDL_EdaFuncDrop f = SDL_GetWindowData(w, SDL_EDA_KEY_FUNC_DROP);
 		if (f) f(str);
 	}
 	SDL_free(str);
@@ -436,13 +436,13 @@ SDL_Renderer* SDL_EDA_GetRenderer(void)
 static SDL_INLINE void SDL_edaDisplay(void)
 {
 	SDL_Window* w;
-	for (w = window_head_; w; w = (SDL_Window*)SDL_GetWindowData(w, SDL_EDA_KEY_NEXT))
+	for (w = window_head_; w; w = SDL_GetWindowData(w, SDL_EDA_KEY_NEXT))
 	{
-		SDL_EdaFuncDisplay func = (SDL_EdaFuncDisplay)SDL_GetWindowData(w, SDL_EDA_KEY_FUNC_DISPLAY);
+		SDL_EdaFuncDisplay func = SDL_GetWindowData(w, SDL_EDA_KEY_FUNC_DISPLAY);
 		if (func)
 		{
 			SDL_Renderer* renderer = SDL_GetRenderer(w);
-			SDL_GLContext ctx = (SDL_GLContext)SDL_GetWindowData(w, SDL_EDA_KEY_GLCONTEXT);
+			SDL_GLContext ctx = SDL_GetWindowData(w, SDL_EDA_KEY_GLCONTEXT);
 			if (renderer)
 			{
 				SDL_edaSetRenderer(renderer);
