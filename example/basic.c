@@ -160,9 +160,12 @@ int main(int ac, char* av[]) {
 	SDL_EDA_WindowSize(120, 120);
 	SDL_EDA_WindowPosition(0, 0);
 	SDL_EDA_CreateWindow(u8"SDL EDA システム");
+  SDL_EDA_DisplayFunc(rendering);
 	SDL_EDA_CloseFunc(closeRequested);
-	SDL_EDA_WindowPosition(120, 0);
+
+  SDL_EDA_WindowPosition(120, 0);
 	SDL_EDA_CreateWindow("system");
+  SDL_EDA_DisplayFunc(rendering);
 	SDL_EDA_CloseFunc(closeRequested);
   init();
   SDL_EDA_EnterLoop();
