@@ -358,18 +358,21 @@ static SDL_INLINE void SDL_edaProcessEvents(SDL_Event* ev)
 		switch (ev->type)
 		{
 			case SDL_QUIT:
-				if (n_windows_ > 0 && (!func_quit_ || func_quit_()))
+				if (n_windows_ > 0)
 				{
 					SDL_Window* w;
-					SDL_Window* w_next;
-					for (w = window_head_; w; w = w_next)
+					for (w = window_head_; w; w = SDL_GetWindowData(w, SDL_EDA_KEY_NEXT))
 					{
-						SDL_EdaFuncEventRequested f = SDL_GetWindowData(w, SDL_EDA_KEY_FUNC_CLOSE);
-						w_next = SDL_GetWindowData(w, SDL_EDA_KEY_NEXT);
-						if (!f || f()) SDL_edaDestroyWindow(w);
+						SDL_Event e;
+            e.type = SDL_WINDOWEVENT;
+            e.window.type = SDL_WINDOWEVENT;
+            e.window.event = SDL_WINDOWEVENT_CLOSE;
+            e.window.timestamp = SDL_GetTicks();
+            e.window.windowID = SDL_GetWindowID(w);
+            SDL_PushEvent(&e);
 					}
 				}
-				if (n_windows_ == 0) system_active_ = SDL_FALSE;
+				else system_active_ = SDL_FALSE;
 				break;
 			case SDL_KEYDOWN:
 				if (func_keydown_) func_keydown_(ev->key.keysym.sym);
