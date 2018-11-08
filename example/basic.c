@@ -94,7 +94,7 @@ static Uint8 closeRequested(void)
 {
   const SDL_MessageBoxButtonData buttons[] = {
     { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0, "Close" },
-    {                                     0, 1, "Cancel" },
+    {                                       0, 1, "Cancel" },
   };
   const SDL_MessageBoxColorScheme colorScheme = {
     {

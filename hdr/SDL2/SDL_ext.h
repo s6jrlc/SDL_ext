@@ -35,6 +35,11 @@ extern DECLSPEC void SDLCALL SDL_EDA_Init(int* argcp, char** argv);
 extern DECLSPEC void SDLCALL SDL_EDA_ExitLoop(void);
 
 /**
+ This function avoids main loop for your intialization error
+ */
+extern DECLSPEC void SDLCALL SDL_EDA_AvoidLoop(void);
+
+/**
  This function enters main loop of SDL EDA system
  */
 extern DECLSPEC void SDLCALL SDL_EDA_EnterLoop(void);

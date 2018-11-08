@@ -123,7 +123,15 @@ void SDL_EDA_Init(int* acp, char** av)
 }
 void SDL_EDA_ExitLoop(void)
 {
-	system_active_ = SDL_FALSE;
+  SDL_Event e;
+  e.type = SDL_QUIT;
+  e.quit.type = SDL_QUIT;
+  e.quit.timestamp = SDL_GetTicks();
+  SDL_PushEvent(&e);
+}
+void SDL_EDA_AvoidLoop(void)
+{
+  system_active_ = SDL_FALSE;
 }
 
 void SDL_EDA_FrameRate(Uint32 framerate)

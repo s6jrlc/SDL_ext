@@ -86,8 +86,7 @@ namespace {
     font = TTF_OpenFont("ipag.ttf", 32);
     if (!font) {
       SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "font load error", TTF_GetError(), nullptr);
-      SDL_EDA_ExitLoop();
-      atExit();
+      SDL_EDA_AvoidLoop();
       return;
     }
     TTF_SetFontStyle(font, TTF_STYLE_ITALIC);
