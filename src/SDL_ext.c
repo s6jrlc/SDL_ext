@@ -278,16 +278,12 @@ static SDL_INLINE void SDL_edaProcessWindowsEvents(SDL_WindowEvent* ev_window)
 		case SDL_WINDOWEVENT_CLOSE:
 			if (SDL_edaCallWCFunc(ev_window, SDL_EDA_KEY_FUNC_CLOSE))
 			{
-				if (n_windows_ > 1)
-				{
-					SDL_edaDestroyWindow(SDL_GetWindowFromID(ev_window->windowID));
-				}
-				else if (!func_quit_ || func_quit_())
-				{
-					SDL_edaDestroyWindow(SDL_GetWindowFromID(ev_window->windowID));
-					SDL_FlushEvent(SDL_QUIT);
-					system_active_ = SDL_FALSE;
-				}
+        SDL_FlushEvent(SDL_QUIT);
+        if (n_windows_ > 1 || !func_quit_ || func_quit_())
+        {
+          SDL_edaDestroyWindow(SDL_GetWindowFromID(ev_window->windowID));
+        }
+        if (n_windows_ == 0) system_active_ = SDL_FALSE;
 			}
 			break;
 		case SDL_WINDOWEVENT_MOVED:
