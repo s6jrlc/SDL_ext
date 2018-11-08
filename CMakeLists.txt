@@ -52,7 +52,7 @@ file(GLOB examples ${PROJECT_SOURCE_DIR}/example/*.c ${PROJECT_SOURCE_DIR}/examp
 file(GLOB resource ${PROJECT_SOURCE_DIR}/resource/*)
 file(GLOB source ${PROJECT_SOURCE_DIR}/src/*.c)
 file(GLOB headers ${PROJECT_SOURCE_DIR}/hdr/SDL2/*.h)
-list(FILTER resource EXCLUDE REGEX .git)
+list(FILTER resource EXCLUDE REGEX licenses)
 set_property(TARGET PROPERTY PUBLIC_HEADER ${headers})
 
 # -----------------------------------------------------------------------------
