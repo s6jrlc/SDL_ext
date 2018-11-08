@@ -276,9 +276,9 @@ static SDL_INLINE void SDL_edaProcessWindowsEvents(SDL_WindowEvent* ev_window)
 	switch (ev_window->event)
 	{
 		case SDL_WINDOWEVENT_CLOSE:
+      SDL_FlushEvent(SDL_QUIT);
 			if (SDL_edaCallWCFunc(ev_window, SDL_EDA_KEY_FUNC_CLOSE))
 			{
-        SDL_FlushEvent(SDL_QUIT);
         if (n_windows_ > 1 || !func_quit_ || func_quit_())
         {
           SDL_edaDestroyWindow(SDL_GetWindowFromID(ev_window->windowID));
